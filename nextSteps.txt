@@ -1,0 +1,21 @@
+(Done)1. Persistência de Dados (Banco de Dados Relacional)
+Atualmente, se você reiniciar o servidor, todas as tarefas somem porque estão salvas apenas numa lista RAM.
+
+O que fazer: Integrar o SQLAlchemy (ORM) junto ao SQLite (para desenvolvimento local) ou PostgreSQL.
+
+Como aplicar na Clean Architecture: O seu Service deixará de manipular uma lista em Python e passará a chamar as sessões do banco de dados (inserindo, consultando e deletando registros reais via ORM).
+
+2. Tratamento Global de Erros e Exceções
+Atualmente, tratamos erros pontuais (como o ValueError no cadastro). Conforme a aplicação cresce, espalhar blocos try/except polui o código.
+
+O que fazer: Utilizar os manipuladores de exceção nativos do FastAPI (@app.exception_handler) para capturar erros customizados da aplicação de forma centralizada e padronizar o formato do JSON de erro devolvido ao cliente.
+
+3. Versionamento de API
+Se no futuro você precisar mudar a estrutura de dados sem quebrar aplicativos ou front-ends antigos que já consomem sua API, precisará organizar as versões das rotas.
+
+O que fazer: Consolidar o uso de prefixos como /api/v1/todos e, quando houver mudanças drásticas, escalar para /api/v2/todos mantendo o padrão modular de Controllers.
+
+4. Boas Práticas com Git (Git Flow na Prática)
+Com a arquitetura modularizada, você pode aplicar um fluxo de trabalho rigoroso no versionamento:
+
+O que fazer: Criar feature branches para cada nova funcionalidade (ex: git checkout -b feature/database-integration), realizar commits atômicos descritivos e abrir Pull Requests simulando um ambiente de equipe.

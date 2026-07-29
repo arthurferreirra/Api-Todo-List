@@ -1,25 +1,25 @@
-#service is responsible for handling the business logic of the application. It interacts with the data layer (e.g., database) and provides methods to perform operations related to todos.
+from sqlalchemy.orm import Session
+from app.models.todo import TodoModel
+from app.schemas.todo import TodoCreate
 
-from typing import List
-from app.schemas.todo import Todo
+def get_all_todos(db: Session):
+    return db.query(TodoModel).all()
 
-_todos_db = [] # data base simulation
+def create_todo(db: Session, todo_data: TodoCreate):
+    existing = db.query(TodoModel).filter(TodoModel.task == todo_data.task).first()
+    if existing:
+        raise ValueError("A todo with this task already exists.")
 
-def get_all_todos() -> List[Todo]:
-    return _todos_db
+    db_todo = TodoModel(task=todo_data.task, completed=False)
+    db.add(db_todo)
+    db.commit()
+    db.refresh(db_todo)
+    return db_todo
 
-def create_todo(todo_data: Todo) -> Todo:
-    # Check if a todo with the same task already exists
-    for todo in _todos_db:
-        if todo.task.lower() == todo_data.task.lower():
-            raise ValueError("Todo with this task already exists.")
-    _todos_db.append(todo_data)
-    return todo_data
-
-def delete_todo(todo_id: int) -> bool:
-    for i, todo in enumerate(_todos_db):
-        if todo.id == todo_id:
-            _todos_db.pop(i)
-            return True
-    return False
-    
+def delete_todo(db: Session, todo_id: int):
+    todo = db.query(TodoModel).filter(TodoModel.id == todo_id).first()
+    if not todo:
+        return False  # Todo not found
+    db.delete(todo)
+    db.commit()
+    return True
