@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.api.v1 import router as todo_router
+from app.api.v1.routes import router as todo_router
+
 from app.database import Base, engine
 from app.models.todo import TodoModel
 
@@ -8,7 +9,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Todo API", version="1.0.0")
 
-app.include_router(todo_router)
+app.include_router(todo_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
