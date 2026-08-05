@@ -1,0 +1,32 @@
+1. Desacoplamento e Inversão de Dependências
+Na nossa rota de criação de tarefas (create_todo), injetamos a sessão do banco usando Depends(get_db). Do ponto de vista de Clean Architecture, quais camadas exatas estão sendo isoladas por essa decisão e o que aconteceria com a manutenibilidade do nosso código se a rota fizesse a instância do banco de dados diretamente sem essa abstração?
+
+2. Concorrência e Conexões (Thread Safety)
+Estamos utilizando SQLite com SQLAlchemy e o parâmetro connect_args={"check_same_thread": False}. Em um cenário de produção com milhares de requisições concorrentes batendo na API ao mesmo tempo, quais são os riscos críticos de performance e concorrência ao usar SQLite como persistência, e em qual momento exato da evolução do produto você migraria para um banco relacional cliente-servidor (como PostgreSQL)?
+
+3. Resiliência de Recursos e Vazamento de Conexões
+No nosso gerenciador de sessão get_db(), utilizamos o bloco try/finally com o comando yield. Explique detalhadamente o que o interpretador Python e o FastAPI garantem com essa estrutura em caso de uma falha ou exceção não tratada no meio do fluxo de negócio do Service. Como isso previne connection leaks?
+
+4. Segurança e Engenharia de Dados
+Discutimos que o uso do ORM do SQLAlchemy protege nativamente contra SQL Injection através de parâmetros vinculados. No entanto, se um desenvolvedor júnior da sua equipe decidisse fazer uma consulta otimizada utilizando SQL puro concatenando variáveis diretamente, qual seria a estratégia de código defensivo (ou ferramenta de análise estática) que você implementaria no pipeline de CI/CD para bloquear esse tipo de vulnerabilidade antes que ela chegue ao ambiente de produção?
+
+5. Arquitetura e Contratos de Dados (Pydantic)
+Separamos estritamente os Schemas (Pydantic) dos Models (SQLAlchemy). Por que essa separação de responsabilidades (evitar expor diretamente o modelo do banco de dados na camada de transporte da API) é considerada uma prática indispensável para o design de APIs resilientes e preparadas para mudanças de contrato a longo prazo?
+
+
+
+---------------Respostas esperadas---------------------------
+1. Sobre Desacoplamento e Inversão de Dependências
+Resposta Ideal: "Estamos isolando a camada de persistência/infraestrutura (banco de dados) da camada de transporte/apresentação (rotas/controllers) e de negócio (services). O FastAPI utiliza injeção de dependência via Depends(get_db) para desacoplar a criação e o fechamento da sessão do ciclo de vida da requisição. Sem essa abstração, as rotas acoplariam diretamente a lógica do ORM, violando o Princípio da Responsabilidade Única (SRP). Isso tornaria impossível mockar o banco de dados em testes unitários sem abrir uma conexão real, além de espalhar código de gerenciamento de infraestrutura pela camada de negócio."
+
+2. Sobre Concorrência, Conexões e SQLite
+Resposta Ideal: "O SQLite é um banco baseado em arquivos locais e possui bloqueio de escrita no nível de arquivo (database-level locking). Em cenários de alta concorrência, múltiplas threads tentando escrever simultaneamente causarão gargalos de E/S (database is locked) e latência inaceitável. Além disso, o SQLite não suporta conexões em rede eficientes, escalabilidade horizontal ou recursos avançados de concorrência transacional (ACID robusto). A migração para um banco cliente-servidor como o PostgreSQL deve ocorrer assim que o projeto sair do MVP e precisar escalar concorrentemente ou quando o volume de escritas simultâneas degradar o tempo de resposta da API."
+
+3. Sobre Resiliência de Recursos e Vazamento de Conexões (yield e finally)
+Resposta Ideal: "O uso do yield transforma a função get_db em um gerador síncrono gerenciado pelo FastAPI. Quando a rota é chamada, a sessão é aberta e o controle é pausado (yield db) para que a requisição processe o serviço. A mágica do finally garante que, independentemente de a requisição retornar com sucesso (200/201) ou disparar uma exceção não tratada (erro 500), o bloco finally será executado obrigatoriamente. É nele que fechamos a sessão (db.close()), devolvendo a conexão para o pool e prevenindo connection leaks que esgotariam o limite de conexões do banco."
+
+4. Sobre Segurança e Engenharia de Dados (SQL Injection)
+Resposta Ideal: "Para blindar o sistema contra SQL Injection na camada de CI/CD, a estratégia mais eficaz é implementar análise estática de código (SAST) utilizando ferramentas como Bandit ou Semgrep integradas ao pipeline do GitHub Actions para bloquear PRs com consultas SQL puras ou interpolação de strings. Adicionalmente, o uso de linters como Flake8 e revisões de código obrigatórias garantem que toda interação com o banco passe exclusivamente pelo ORM (SQLAlchemy) ou query builders, que utilizam prepared statements e parâmetros vinculados por padrão, separando completamente a estrutura da consulta dos dados inseridos pelo usuário."
+
+5. Sobre Arquitetura e Contratos de Dados (Pydantic vs. SQLAlchemy)
+Resposta Ideal: "A separação entre Schemas (Pydantic) e Models (SQLAlchemy) protege o contrato da API de acoplamentos acidentais com o esquema físico do banco de dados. O modelo do banco gerencia colunas, chaves estrangeiras e persistência, enquanto o Schema valida os dados de entrada/saída na camada de transporte. Se decidirmos mudar a estrutura de uma tabela no banco (ex: normalizar uma coluna), os clientes da API não serão afetados, pois o contrato exposto pelo Pydantic permanece intacto. Isso garante versionamento limpo, segurança contra exposição de campos sensíveis (como hashes de senha) e desacoplamento total entre o domínio e a interface externa."
