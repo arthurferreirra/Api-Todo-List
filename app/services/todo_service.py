@@ -1,10 +1,17 @@
+from typing import Optional
+
 from sqlalchemy.orm import Session
 from app.models.todo import TodoModel
 from app.schemas.todo import TodoCreate, TodoUpdate
 from app.core.exceptions import ConflictException, NotFoundException
 
-def get_all_todos(db: Session):
-    return db.query(TodoModel).all()
+def get_all_todos(db: Session, skip: int = 0, limit: int = 10, completed: Optional[bool] = None):
+    query = db.query(TodoModel)
+
+    if completed is not None:
+        query = query.filter(TodoModel.completed == completed)
+
+    return query.offset(skip).limit(limit).all()
 
 def create_todo(db: Session, todo_data: TodoCreate):
     existing = db.query(TodoModel).filter(TodoModel.task == todo_data.task).first()
@@ -34,8 +41,7 @@ def update_todo(db: Session, todo_id: int, todo_data: TodoUpdate):
     update_data = todo_data.dict(exclude_unset=True)
 
     if "task" in update_data:
-        existing = db.query(TodoModel).filter(TodoModel.task == update_data["task"], TodoModel.id != todo_id).first()
-        if existing:
+        if db.query(TodoModel).filter(TodoModel.task == update_data["task"], TodoModel.id != todo_id).first():
             raise ConflictException("A todo with this task already exists.")
 
     for key, value in update_data.items():

@@ -1,11 +1,17 @@
 #schema will be the base of the project and will be used to validate the data that is sent to the API. It will also be used to serialize the data that is returned from the API.
 from pydantic import BaseModel
+from typing import Optional
 
 class TodoBase(BaseModel):
     task: str
 
+class TodoUpdate(TodoBase):
+    task: Optional[str] = None
+    completed: Optional[bool] = None
+
 class TodoCreate(TodoBase):
-    pass
+    task: str
+    completed: bool = False
 
 class Todo(TodoBase):
     id: int
