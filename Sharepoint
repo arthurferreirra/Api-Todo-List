@@ -1,0 +1,67 @@
+📚 Documentação Técnica do Projeto: API Todo-List (Nível Pleno)
+1. Visão Geral do Projeto
+Objetivo: Desenvolver uma API RESTful escalável, segura e orientada a boas práticas de mercado para gerenciamento de tarefas (estilo Trello/Jira).
+
+Stack Tecnológica:
+
+Framework: FastAPI (Python)
+
+Banco de Dados & ORM: SQLite + SQLAlchemy
+
+Validação: Pydantic (v2)
+
+Segurança: JWT (JSON Web Tokens) + Hashing com Bcrypt nativo.
+
+2. Decisões Arquiteturais e Padrões Utilizados
+Para garantir manutenibilidade e desacoplamento, a aplicação foi estruturada seguindo princípios de Clean Architecture:
+
+Separação de Camadas:
+
+models/: Representação do banco de dados (SQLAlchemy).
+
+schemas/: Contratos de entrada e saída de dados e validação (Pydantic).
+
+services/: Regras de negócio puras isoladas das rotas.
+
+api/: Controladores/Rotas HTTP e gerenciamento de injeção de dependência (Depends).
+
+DRY (Don't Repeat Yourself):
+
+Uso de exclude_unset=True no Pydantic para unificar a lógica de atualização (PUT e PATCH) sem duplicar código.
+
+Tratamento Global de Erros:
+
+Uso de exceções personalizadas (NotFoundException, ConflictException) capturadas por Exception Handlers globais para retornar códigos HTTP semânticos (404, 409) de forma padronizada.
+
+3. Histórico de Implementações e Desafios Superados
+Fase 1: CRUD Base e Tratamento de Erros
+O que foi feito: Criação da estrutura inicial de tarefas, persistência com SQLite e padronização de respostas de erro globais.
+
+Decisão: Centralizar a validação de existência de recursos dentro das funções do Service para garantir integridade e reuso (delete acionando o validador de busca).
+
+Fase 2: Filtros e Paginação (Escalabilidade)
+O que foi feito: Implementação de paginação baseada em deslocamento (skip e limit) e filtros dinâmicos opcionais (completed: Optional[bool]).
+
+Por quê: Prevenir estouro de memória no servidor e no banco ao lidar com grande volume de dados.
+
+Fase 3: Segurança e Autenticação com JWT
+O que foi feito:
+
+Criação do modelo de Usuários.
+
+Implementação do módulo security.py para gerenciamento de senhas e tokens criptografados.
+
+Endpoint dedicado de registro (/auth/register).
+
+Desafio Encontrado & Solução (O Caso do Bcrypt):
+
+Problema: A biblioteca legada passlib apresentou incompatibilidade com versões recentes do bcrypt, gerando um ValueError de limite de bytes ao iniciar o hash.
+
+Solução: Substituição do passlib pelo uso direto e otimizado do módulo nativo bcrypt e jose, garantindo estabilidade e alta segurança corporativa.
+
+4. Próximos Passos no Desenvolvimento
+Endpoint de Login (/auth/token): Autenticar o usuário e retornar o token JWT.
+
+Dependência de Segurança (get_current_user): Criar o "guarda" de rotas que valida o token no cabeçalho HTTP.
+
+Isolamento de Dados por Usuário: Vincular as tarefas ao usuário logado (owner_id) para que cada pessoa gerencie apenas as suas próprias tarefas.

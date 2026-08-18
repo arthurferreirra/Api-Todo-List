@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from app.api.v1.routes import router as todo_router
+from app.api.v1.auth_routes import router as auth_router
 
 from app.database import Base, engine
 from app.core.exceptions import NotFoundException, ConflictException
@@ -36,3 +37,4 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     )
 
 app.include_router(todo_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
