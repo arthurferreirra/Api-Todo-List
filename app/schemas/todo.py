@@ -13,9 +13,11 @@ class TodoCreate(TodoBase):
     task: str
     completed: bool = False
 
-class Todo(TodoBase):
+class TodoResponse(TodoBase):
     id: int
-    completed: bool = False
+    task: str
+    completed: bool
+    owner_id: int
 
     class Config:
         from_attributes = True
