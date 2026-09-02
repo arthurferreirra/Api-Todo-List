@@ -1,11 +1,14 @@
 class AppException(Exception):
-    """Base class for all application-specific exceptions."""
-    pass
+    def __init__(self, message: str, status_code: int = 400, error_type: str ="AppError"):
+        self.message = message
+        self.status_code = status_code
+        self.error_type = error_type
+        super().__init__(self.message)
 
 class NotFoundException(AppException):
-    """Exception raised when a requested resource is not found."""
-    pass
+    def __init__(self, message: str = "Resource not found"):
+        super().__init__(message=message, status_code=404, error_type="NotFoundException")
 
 class ConflictException(AppException):
-    """Exception raised when there is a conflict with the current state of the resource."""
-    pass
+    def __init__(self, message: str = "Conflict detected"):
+        super().__init__(message=message, status_code=409, error_type="ConflictException")

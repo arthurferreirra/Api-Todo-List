@@ -28,10 +28,8 @@ def create_todo(todo_data: TodoCreate, db: Session = Depends(get_db), current_us
 
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_todo(todo_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    success = todo_service.delete_todo(todo_id, db)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
-    return todo_service.delete_todo(db, todo_id=todo_id, user_id=current_user.id)
+    todo_service.delete_todo(db, todo_id=todo_id, user_id=current_user.id)
+    return None
 
 @router.get("/", response_model=List[TodoResponse])
 def list_todos(
